@@ -1,19 +1,30 @@
 ﻿local REPO = 'examiners/robloxclient'
 local BRANCH = 'main'
 
+local function rawURL(path)
+	return ('https://raw.githubusercontent.com/%s/%s/%s'):format(REPO, BRANCH, path)
+end
+
 local FILES = {
-	LIBRARY = ('https://raw.githubusercontent.com/%s/%s/library.lua'):format(REPO, BRANCH),
-	MAIN = ('https://raw.githubusercontent.com/%s/%s/main.lua'):format(REPO, BRANCH)
+	LIBRARY = rawURL('library.lua'),
+	MAIN = rawURL('main.lua'),
+	UNIVERSAL = rawURL('client/universal.lua')
+}
+
+local INJECTED = {
+	['newvape/libraries/hash.lua'] = rawURL('libraries/hash.lua'),
+	['newvape/libraries/prediction.lua'] = rawURL('libraries/prediction.lua'),
+	['newvape/libraries/entity.lua'] = rawURL('libraries/entity.lua')
 }
 
 local supported = {
 	[77790193039862] = {
 		Name = '1.8 client',
-		URL = ('https://raw.githubusercontent.com/%s/%s/client/1.8.lua'):format(REPO, BRANCH)
+		URL = rawURL('client/1.8.lua')
 	},
 	[893973440] = {
 		Name = 'Flee the Facility',
-		URL = ('https://raw.githubusercontent.com/%s/%s/client/ftf.lua'):format(REPO, BRANCH)
+		URL = rawURL('client/ftf.lua')
 	}
 }
 
@@ -50,37 +61,47 @@ local function runSource(source, ...)
 	return fn(...)
 end
 
+local function injectLibraries(lib)
+	if not lib.Libraries.files then
+		lib.Libraries.files = {}
+	end
+	for path, url in pairs(INJECTED) do
+		if not lib.Libraries.files[path] then
+			lib.Libraries.files[path] = fetch(url)
+		end
+	end
+end
+
+local function loadUniversal(lib)
+	if lib.UniversalLoaded then return end
+	notify('robloxclient', 'Loading universal...')
+	injectLibraries(lib)
+	runSource(fetch(FILES.UNIVERSAL))
+	lib.UniversalLoaded = true
+end
+
 local client = supported[game.PlaceId]
 if not client then
 	notify('robloxclient', 'Unsupported game (PlaceId ' .. tostring(game.PlaceId) .. ')')
 	return
 end
 
-if shared.library and shared.library.Loaded then
-	notify(client.Name, 'Fetching from GitHub...')
-
-	local ok, err = pcall(function()
-		local code = fetch(client.URL)
-		runSource(code)
-	end)
-
-	if not ok then
-		notify(client.Name, 'Failed to load: ' .. tostring(err))
-		return
-	end
-
-	notify(client.Name, 'Loaded.')
-	return
-end
-
-notify('robloxclient', 'Fetching UI library...')
-
 local ok, err = pcall(function()
-	local library = runSource(fetch(FILES.LIBRARY))
+	if shared.library and shared.library.Loaded then
+		local lib = shared.library
+		shared.vape = lib
+		loadUniversal(lib)
+	else
+		notify('robloxclient', 'Fetching UI library...')
 
-	local lib = runSource(fetch(FILES.MAIN), library)
+		local library = runSource(fetch(FILES.LIBRARY))
+		local lib = runSource(fetch(FILES.MAIN), library)
 
-	shared.library = lib
+		shared.library = lib
+		shared.vape = lib
+
+		loadUniversal(lib)
+	end
 
 	notify(client.Name, 'Fetching from GitHub...')
 

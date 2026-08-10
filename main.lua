@@ -9,6 +9,8 @@ local Players = cloneref(game:GetService('Players'))
 local Workspace = cloneref(game:GetService('Workspace'))
 local RunService = cloneref(game:GetService('RunService'))
 local UserInputService = cloneref(game:GetService('UserInputService'))
+local TweenService = cloneref(game:GetService('TweenService'))
+local TextService = cloneref(game:GetService('TextService'))
 
 local lplr = Players.LocalPlayer
 
@@ -24,8 +26,28 @@ local lib = {
 }
 
 shared.library = lib
+shared.vape = lib
 
-lib.gui = Workspace
+lib.gui = Instance.new('ScreenGui')
+lib.gui.Name = 'RobloxClient'
+lib.gui.ResetOnSpawn = false
+lib.gui.IgnoreGuiInset = true
+lib.gui.Parent = CoreGui
+
+local scaledGui = Instance.new('Frame')
+scaledGui.Name = 'ScaledGui'
+scaledGui.BackgroundTransparency = 1
+scaledGui.BorderSizePixel = 0
+scaledGui.Size = UDim2.new(1, 0, 1, 0)
+scaledGui.Parent = lib.gui
+
+local clickGui = Instance.new('Frame')
+clickGui.Name = 'ClickGui'
+clickGui.BackgroundTransparency = 1
+clickGui.BorderSizePixel = 0
+clickGui.Size = UDim2.new(1, 0, 1, 0)
+clickGui.Visible = false
+clickGui.Parent = scaledGui
 
 local notifGui = Instance.new('ScreenGui')
 notifGui.Name = 'RobloxClientNotifications'
@@ -105,6 +127,34 @@ local function dispose(item)
 	end
 end
 
+local function newSignal()
+	local connections = {}
+	return {
+		Event = {
+			Connect = function(self, func)
+				table.insert(connections, func)
+				return {
+					Disconnect = function()
+						local i = table.find(connections, func)
+						if i then
+							table.remove(connections, i)
+						end
+					end
+				}
+			end
+		},
+		Fire = function(self, ...)
+			local copy = {}
+			for i, fn in ipairs(connections) do
+				copy[i] = fn
+			end
+			for _, fn in ipairs(copy) do
+				pcall(fn, ...)
+			end
+		end
+	}
+end
+
 function lib:Clean(...)
 	for i = 1, select('#', ...) do
 		table.insert(self.Cleanups, select(i, ...))
@@ -115,6 +165,13 @@ local window = library:CreateWindow({
 	Accent = Color3.fromRGB(255, 120, 30),
 	Key = Enum.KeyCode.RightShift
 })
+
+task.spawn(function()
+	while true do
+		clickGui.Visible = window.Enabled or false
+		task.wait(0.1)
+	end
+end)
 
 local flagCounter = 0
 local function nextFlag()
@@ -245,6 +302,15 @@ local function addElement(section, kind, props)
 				pcall(props.Function, h, s, v)
 			end
 		end
+	elseif kind == 'button' then
+		content = section:CreateButton({
+			name = props.Name,
+			callback = function()
+				if props.Function then
+					pcall(props.Function)
+				end
+			end
+		})
 	end
 
 	local children = section.Holder:GetChildren()
@@ -267,6 +333,9 @@ local function newCategory(name)
 
 	function cat:CreateModule(props)
 		props = props or {}
+		if lib.Modules[props.Name] then
+			return lib.Modules[props.Name]
+		end
 		local module = {
 			Name = props.Name,
 			Enabled = false,
@@ -352,6 +421,10 @@ local function newCategory(name)
 			return module:_addElement('colorslider', props, 18)
 		end
 
+		function module:CreateButton(props)
+			return module:_addElement('button', props, 30)
+		end
+
 		function module:CreateTwoSlider(props)
 			props = props or {}
 			local minEl = module:_addElement('slider', {
@@ -396,7 +469,7 @@ local function newCategory(name)
 			}
 		end
 
-		table.insert(lib.Modules, module)
+		lib.Modules[module.Name] = module
 		return module
 	end
 
@@ -419,15 +492,25 @@ local function fadd(kind, props, height)
 	fs.Holder.Parent.Parent.Size = UDim2.new(1, 0, 0, fsH)
 	return el
 end
+friends.ColorUpdate = newSignal()
+friends.Update = newSignal()
 friends.Options['Use friends'] = fadd('toggle', {Name = 'Use friends', Default = false})
 friends.Options['Recolor visuals'] = fadd('toggle', {Name = 'Recolor visuals', Default = true})
-friends.Options['Friends color'] = fadd('colorslider', {Name = 'Friends color', Default = Color3.fromRGB(86, 236, 255)})
+friends.Options['Friends color'] = fadd('colorslider', {
+	Name = 'Friends color',
+	Default = Color3.fromRGB(86, 236, 255),
+	Function = function()
+		friends.ColorUpdate:Fire()
+	end
+})
 friends.ListEnabled = {}
 fadd('textbox', {
 	Name = 'Add friend',
 	Function = function(text)
 		if text and text ~= '' and not table.find(friends.ListEnabled, text) then
 			table.insert(friends.ListEnabled, text)
+			friends.Update:Fire()
+			friends.ColorUpdate:Fire()
 		end
 	end
 }, 30)
@@ -437,6 +520,8 @@ fadd('textbox', {
 		local i = text and table.find(friends.ListEnabled, text)
 		if i then
 			table.remove(friends.ListEnabled, i)
+			friends.Update:Fire()
+			friends.ColorUpdate:Fire()
 		end
 	end
 }, 30)
@@ -451,6 +536,41 @@ local function madd(kind, props, height)
 	return el
 end
 main.Options['Use team color'] = madd('toggle', {Name = 'Use team color', Default = true})
+main.Options['Teams by server'] = madd('toggle', {Name = 'Teams by server', Default = true})
+
+local targets = newCategory('Targets')
+targets.ListEnabled = {}
+targets.Update = newSignal()
+local ts = targets._page:CreateSection({name = 'Targets', side = 'Left', size = 40})
+local tsH = 40
+local function tadd(kind, props, height)
+	local el = addElement(ts, kind, props)
+	tsH = tsH + (height or 18)
+	ts.Holder.Parent.Parent.Size = UDim2.new(1, 0, 0, tsH)
+	return el
+end
+tadd('textbox', {
+	Name = 'Add target',
+	Function = function(text)
+		if text and text ~= '' and not table.find(targets.ListEnabled, text) then
+			table.insert(targets.ListEnabled, text)
+			targets.Update:Fire()
+		end
+	end
+}, 30)
+tadd('textbox', {
+	Name = 'Remove target',
+	Function = function(text)
+		local i = text and table.find(targets.ListEnabled, text)
+		if i then
+			table.remove(targets.ListEnabled, i)
+			targets.Update:Fire()
+		end
+	end
+}, 30)
+
+newCategory('Minigames')
+lib.Legit = newCategory('Legit')
 
 local entitylib = {}
 
@@ -645,30 +765,118 @@ end
 
 lib.Libraries.entity = entitylib
 lib.Libraries.targetinfo = {Targets = {}}
+lib.Libraries.files = {}
 
-function lib:Remove(name)
-	for i, module in ipairs(self.Modules) do
-		if module.Name == name then
-			if module.Enabled then
-				pcall(function()
-					module:SetEnabled(false)
-				end)
+lib.Libraries.tween = {
+	Tween = function(Object, TweenInfo, Properties)
+		local tween = TweenService:Create(Object, TweenInfo, Properties)
+		tween:Play()
+		return tween
+	end
+}
+
+lib.Libraries.getfontsize = function(text, size, font)
+	local ok, result = pcall(function()
+		return TextService:GetTextSize(tostring(text or ''), size, font, Vector2.new(100000, 100000))
+	end)
+	return ok and result or Vector2.new(0, 0)
+end
+
+local getCustomAsset = getcustomasset
+lib.Libraries.getcustomasset = function(path)
+	if getCustomAsset then
+		local ok, result = pcall(getCustomAsset, path)
+		if ok then return result end
+	end
+	return ''
+end
+
+function lib:CreateOverlay(props)
+	props = props or {}
+	local Overlay = {
+		Enabled = false,
+		Button = {Enabled = false},
+		_clean = {}
+	}
+
+	local children = Instance.new('Frame')
+	children.Name = props.Name or 'Overlay'
+	children.AnchorPoint = Vector2.new(0, 0)
+	children.Position = props.Position or UDim2.fromOffset(0, 0)
+	children.Size = props.Size or UDim2.new(1, 0, 1, 0)
+	children.BackgroundTransparency = 1
+	children.Active = true
+	children.Visible = false
+	children.SizeConstraint = Enum.SizeConstraint.RelativeToScreen
+	children.Parent = lib.gui
+	Overlay.Children = children
+
+	function Overlay:Clean(...)
+		for i = 1, select('#', ...) do
+			local item = select(i, ...)
+			if item then
+				table.insert(self._clean, item)
 			end
-			for _, item in ipairs(module._clean) do
-				dispose(item)
-			end
-			table.clear(module._clean)
-			pcall(function()
-				module._section.Holder.Parent.Parent:Destroy()
-			end)
-			table.remove(self.Modules, i)
-			break
 		end
 	end
+
+	function Overlay:Toggle()
+		Overlay.Enabled = not Overlay.Enabled
+		Overlay.Button.Enabled = Overlay.Enabled
+		Overlay.Children.Visible = Overlay.Enabled
+		if props.Function then
+			pcall(props.Function, Overlay.Enabled)
+		end
+	end
+
+	function Overlay:Unload()
+		for _, item in ipairs(Overlay._clean) do
+			dispose(item)
+		end
+		table.clear(Overlay._clean)
+		pcall(function()
+			children:Destroy()
+		end)
+	end
+
+	Overlay.Button.Toggle = function()
+		Overlay:Toggle()
+	end
+
+	lib:Clean(Overlay.Unload)
+	return Overlay
+end
+
+lib.Profile = 'vape'
+lib.Save = function() end
+
+function lib:Load()
+end
+
+function lib:Uninject()
+	return lib:Unload()
+end
+
+function lib:Remove(name)
+	local module = self.Modules[name]
+	if not module then return end
+	if module.Enabled then
+		pcall(function()
+			module:SetEnabled(false)
+		end)
+	end
+	for _, item in ipairs(module._clean) do
+		dispose(item)
+	end
+	table.clear(module._clean)
+	pcall(function()
+		module._section.Holder.Parent.Parent:Destroy()
+	end)
+	self.Modules[name] = nil
 end
 
 function lib:Unload()
-	for _, module in ipairs(self.Modules) do
+	for _, module in pairs(self.Modules) do
 		if module.Enabled then
 			pcall(function()
 				module:SetEnabled(false)
