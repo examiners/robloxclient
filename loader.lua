@@ -1,5 +1,4 @@
-﻿-- robloxclient
--- Checks which Roblox game you're in and loads the matching client script from GitHub.
+﻿
 
 local REPO = 'examiners/robloxclient'
 local BRANCH = 'main'
