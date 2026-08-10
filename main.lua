@@ -200,8 +200,8 @@ local function addElement(section, kind, props)
 			name = props.Name,
 			min = props.Min or 0,
 			max = props.Max or 100,
-			suffix = type(props.Suffix) == 'function' and '' or (props.Suffix or ''),
-			decimals = props.Decimal or 1,
+			suffix = props.Suffix or '',
+			decimals = 1 / (props.Decimal or 1),
 			default = props.Default or 0,
 			callback = function() end
 		})

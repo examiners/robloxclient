@@ -1505,7 +1505,11 @@ do -- // Content
 				function Content_:Set(state)
 					Content_.State = math.clamp(math.round(state * Content_.Decimals) / Content_.Decimals, Content_.Min, Content_.Max)
 					--
-					Frame_Slider_Title.Text = "<b>" .. Content_.State .. Content_.Ending .. "</b>"
+					local Ending = Content_.Ending
+					if type(Ending) == "function" then
+						Ending = Ending(Content_.State)
+					end
+					Frame_Slider_Title.Text = "<b>" .. Content_.State .. tostring(Ending or "") .. "</b>"
 					Outline_Frame_Slider.Size = UDim2.new((1 - ((Content_.Max - Content_.State) / (Content_.Max - Content_.Min))), 0, 1, 0)
 					--
 					Content_.Callback(Content_:Get())
