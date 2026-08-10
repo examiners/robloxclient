@@ -113,7 +113,7 @@ end
 
 local window = library:CreateWindow({
 	Accent = Color3.fromRGB(255, 120, 30),
-	Key = Enum.KeyCode.RightControl
+	Key = Enum.KeyCode.RightShift
 })
 
 local flagCounter = 0
