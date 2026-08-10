@@ -1,6 +1,4 @@
-﻿
-
-local REPO = 'examiners/robloxclient'
+﻿local REPO = 'examiners/robloxclient'
 local BRANCH = 'main'
 
 local supported = {
