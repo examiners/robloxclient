@@ -15,9 +15,9 @@ local coreGui = cloneref(game:GetService('CoreGui'))
 
 local gameCamera = workspace.CurrentCamera
 local lplr = playersService.LocalPlayer
-local vape = shared.vape
-local entitylib = vape.Libraries.entity
-local targetinfo = vape.Libraries.targetinfo
+local lib = shared.library
+local entitylib = lib.Libraries.entity
+local targetinfo = lib.Libraries.targetinfo
 local arena = {}
 
 local oldhit
@@ -40,7 +40,7 @@ local function calculateMoveVector()
 end
 
 local function notif(...)
-	return vape:CreateNotification(...)
+	return lib:CreateNotification(...)
 end
 
 run(function()
@@ -50,9 +50,9 @@ run(function()
 		repeat
 			env = getsenv(charscript)
 			task.wait()
-		until env and env.startHit or vape.Loaded == nil
+		until env and env.startHit or lib.Loaded == nil
 
-		if vape.Loaded == nil then return end
+		if lib.Loaded == nil then return end
 	end
 
 	arena = {
@@ -76,7 +76,7 @@ run(function()
 		end
 	end
 
-	vape:Clean(function()
+	lib:Clean(function()
 		table.clear(arena)
 	end)
 end)
@@ -202,7 +202,7 @@ run(function()
 end)
 
 for _, v in {'AimAssist', 'Reach', 'SilentAim', 'AntiFall', 'Desync', 'Invisible', 'Jesus', 'MouseTP', 'Phase', 'SpinBot', 'Swim', 'TargetStrafe', 'AnimationPlayer', 'AntiRagdoll', 'ChatSpammer', 'Disabler', 'StateSpoofer', 'Freecam', 'Gravity', 'Parkour', 'SafeWalk', 'MurderMystery'} do
-	vape:Remove(v)
+	lib:Remove(v)
 end
 
 run(function()
@@ -223,7 +223,7 @@ run(function()
 		end)
 	end
 	
-	AutoClicker = vape.Categories.Combat:CreateModule({
+	AutoClicker = lib.Categories.Combat:CreateModule({
 		Name = 'AutoClicker',
 		Function = function(callback)
 			if callback then
@@ -262,7 +262,7 @@ run(function()
 	local Value
 	local old
 	
-	Reach = vape.Categories.Combat:CreateModule({
+	Reach = lib.Categories.Combat:CreateModule({
 		Name = 'Reach',
 		Function = function(callback)
 			if callback then
@@ -297,7 +297,7 @@ end)
 run(function()
 	local Sprint
 	
-	Sprint = vape.Categories.Combat:CreateModule({
+	Sprint = lib.Categories.Combat:CreateModule({
 		Name = 'Sprint',
 		Function = function(callback)
 			if callback then
@@ -339,7 +339,7 @@ run(function()
 		return old(...)
 	end
 	
-	Velocity = vape.Categories.Combat:CreateModule({
+	Velocity = lib.Categories.Combat:CreateModule({
 		Name = 'Velocity',
 		Function = function(callback)
 			if callback then
@@ -385,7 +385,7 @@ end)
 run(function()
 	local AutoBlock
 	
-	AutoBlock = vape.Categories.Blatant:CreateModule({
+	AutoBlock = lib.Categories.Blatant:CreateModule({
 		Name = 'AutoBlock',
 		Function = function(callback)
 			if callback then
@@ -422,7 +422,7 @@ run(function()
 	local VerticalValue
 	local up, down = 0, 0
 
-	Fly = vape.Categories.Blatant:CreateModule({
+	Fly = lib.Categories.Blatant:CreateModule({
 		Name = 'Fly',
 		Function = function(callback)
 			if callback then
@@ -499,7 +499,7 @@ run(function()
 		end
 	end
 	
-	HighJump = vape.Categories.Blatant:CreateModule({
+	HighJump = lib.Categories.Blatant:CreateModule({
 		Name = 'HighJump',
 		Function = function(callback)
 			if callback then
@@ -539,7 +539,7 @@ run(function()
 	local Expand
 	local modified = {}
 	
-	HitBoxes = vape.Categories.Blatant:CreateModule({
+	HitBoxes = lib.Categories.Blatant:CreateModule({
 		Name = 'HitBoxes',
 		Function = function(callback)
 			if callback then
@@ -605,7 +605,7 @@ run(function()
 		return true, true
 	end
 	
-	Killaura = vape.Categories.Blatant:CreateModule({
+	Killaura = lib.Categories.Blatant:CreateModule({
 		Name = 'Killaura',
 		Function = function(callback)
 			if callback then
@@ -661,7 +661,7 @@ run(function()
 									arena.SwingFunction()
 									AttackDelay = tick() + 0.11
 	
-									if vape.ThreadFix then
+									if lib.ThreadFix then
 										setthreadidentity(8)
 									end
 								end
@@ -750,7 +750,7 @@ run(function()
 					box.Size = Vector3.new(3, 7, 3)
 					box.CFrame = CFrame.new(0, -0.5, 0)
 					box.ZIndex = 0
-					box.Parent = vape.gui
+					box.Parent = lib.gui
 					Boxes[i] = box
 				end
 			else
@@ -867,7 +867,7 @@ run(function()
 	local Value
 	local AutoDisable
 	
-	LongJump = vape.Categories.Blatant:CreateModule({
+	LongJump = lib.Categories.Blatant:CreateModule({
 		Name = 'LongJump',
 		Function = function(callback)
 			if callback then
@@ -914,7 +914,7 @@ run(function()
 	local NoSlowdown
 	local old
 	
-	NoSlowdown = vape.Categories.Blatant:CreateModule({
+	NoSlowdown = lib.Categories.Blatant:CreateModule({
 		Name = 'NoSlowdown',
 		Function = function(callback)
 			if callback then
@@ -936,7 +936,7 @@ run(function()
 	local Value
 	local AutoJump
 	
-	Speed = vape.Categories.Blatant:CreateModule({
+	Speed = lib.Categories.Blatant:CreateModule({
 	    Name = 'Speed',
 	    Function = function(callback)
 	        if callback then
@@ -973,7 +973,7 @@ run(function()
 	rayCheck.RespectCanCollide = true
 	local Active
 	
-	Spider = vape.Categories.Blatant:CreateModule({
+	Spider = lib.Categories.Blatant:CreateModule({
 		Name = 'Spider',
 		Function = function(callback)
 			if callback then
@@ -1027,7 +1027,7 @@ run(function()
 	local Value
 	local old
 	
-	FastBreak = vape.Categories.World:CreateModule({
+	FastBreak = lib.Categories.World:CreateModule({
 		Name = 'FastBreak',
 		Function = function(callback)
 			if callback then
@@ -1059,7 +1059,7 @@ run(function()
 	local Value
 	local old
 	
-	FastPlace = vape.Categories.World:CreateModule({
+	FastPlace = lib.Categories.World:CreateModule({
 		Name = 'FastPlace',
 		Function = function(callback)
 			if callback then

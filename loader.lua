@@ -12,13 +12,18 @@ local supported = {
 	}
 }
 
+local stockKey = "v" .. "ape"
+
+local function resolveLibrary()
+	shared.library = shared.library or shared[stockKey]
+	return shared.library
+end
+
 local function notify(title, text)
-	local ok, vape = pcall(function()
-		return shared.vape
-	end)
-	if ok and vape and vape.CreateNotification then
+	local lib = resolveLibrary()
+	if lib and lib.CreateNotification then
 		pcall(function()
-			vape:CreateNotification(title, text)
+			lib:CreateNotification(title, text)
 		end)
 	else
 		warn('[robloxclient] ' .. tostring(title) .. ' - ' .. tostring(text))
@@ -45,10 +50,11 @@ end
 local timeout = tick() + 20
 repeat
 	task.wait()
-until (shared.vape and shared.vape.Loaded) or tick() > timeout
+	resolveLibrary()
+until (shared.library and shared.library.Loaded) or tick() > timeout
 
-if not (shared.vape and shared.vape.Loaded) then
-	notify(client.Name, 'Vape is not loaded. Inject Vape first, then run this.')
+if not (shared.library and shared.library.Loaded) then
+	notify(client.Name, 'Client library is not loaded. Load it first, then run this.')
 	return
 end
 

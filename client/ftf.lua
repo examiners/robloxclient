@@ -4,7 +4,7 @@ end
 local cloneref = cloneref or function(obj)
 	return obj
 end
-local vapeEvents = setmetatable({}, {
+local mapEvents = setmetatable({}, {
 	__index = function(self, index)
 		self[index] = Instance.new('BindableEvent')
 		return self[index]
@@ -21,17 +21,17 @@ local coreGui = cloneref(game:GetService('CoreGui'))
 
 local gameCamera = workspace.CurrentCamera
 local lplr = playersService.LocalPlayer
-local vape = shared.vape
-local entitylib = vape.Libraries.entity
-local targetinfo = vape.Libraries.targetinfo
+local lib = shared.library
+local entitylib = lib.Libraries.entity
+local targetinfo = lib.Libraries.targetinfo
 local mapobj
 local lstats
 
 local function isFriend(plr, recolor)
-	if vape.Categories.Friends.Options['Use friends'].Enabled then
-		local friend = table.find(vape.Categories.Friends.ListEnabled, plr.Name) and true
+	if lib.Categories.Friends.Options['Use friends'].Enabled then
+		local friend = table.find(lib.Categories.Friends.ListEnabled, plr.Name) and true
 		if recolor then
-			friend = friend and vape.Categories.Friends.Options['Recolor visuals'].Enabled
+			friend = friend and lib.Categories.Friends.Options['Recolor visuals'].Enabled
 		end
 		return friend
 	end
@@ -39,7 +39,7 @@ local function isFriend(plr, recolor)
 end
 
 local function notif(...)
-	return vape:CreateNotification(...)
+	return lib:CreateNotification(...)
 end
 
 local function waitForChildOfType(obj, name, timeout, prop)
@@ -59,9 +59,9 @@ run(function()
 		repeat
 			lstats = lplr:FindFirstChild('TempPlayerStatsModule')
 			task.wait()
-		until lstats or vape.Loaded == nil
+		until lstats or lib.Loaded == nil
 
-		if vape.Loaded == nil then
+		if lib.Loaded == nil then
 			return
 		end
 	end
@@ -70,14 +70,14 @@ run(function()
 	local function updateMap()
 		if mapval.Value then
 			mapobj = mapval.Value
-			vapeEvents.MapAdded:Fire(mapobj)
-		elseif mapboj then
-			vapeEvents.MapRemoved:Fire(mapboj)
+			mapEvents.MapAdded:Fire(mapobj)
+		elseif mapobj then
+			mapEvents.MapRemoved:Fire(mapobj)
 			mapobj = nil
 		end
 	end
 
-	vape:Clean(mapval:GetPropertyChangedSignal('Value'):Connect(updateMap))
+	lib:Clean(mapval:GetPropertyChangedSignal('Value'):Connect(updateMap))
 	if mapval.Value then
 		updateMap()
 	end
@@ -137,9 +137,9 @@ run(function()
 	end
 
 	entitylib.getEntityColor = function(ent)
-		if not (ent.Player and vape.Categories.Main.Options['Use team color'].Enabled) then return end
+		if not (ent.Player and lib.Categories.Main.Options['Use team color'].Enabled) then return end
 		if isFriend(ent.Player, true) then
-			return Color3.fromHSV(vape.Categories.Friends.Options['Friends color'].Hue, vape.Categories.Friends.Options['Friends color'].Sat, vape.Categories.Friends.Options['Friends color'].Value)
+			return Color3.fromHSV(lib.Categories.Friends.Options['Friends color'].Hue, lib.Categories.Friends.Options['Friends color'].Sat, lib.Categories.Friends.Options['Friends color'].Value)
 		end
 		return ent.IsBeast and Color3.new(1, 0.2, 0.2) or Color3.new(0.3, 1, 0.3)
 	end
@@ -148,14 +148,14 @@ run(function()
 end)
 
 for _, v in {'AimAssist', 'Reach', 'SilentAim', 'TriggerBot', 'AntiFall', 'Invisible', 'Jesus', 'Killaura', 'AntiRagdoll', 'Disabler', 'MurderMystery'} do
-	vape:Remove(v)
+	lib:Remove(v)
 end
 
 run(function()
 	local NoSlowdown
 	local old
 	
-	NoSlowdown = vape.Categories.Blatant:CreateModule({
+	NoSlowdown = lib.Categories.Blatant:CreateModule({
 		Name = 'NoSlowdown',
 		Function = function(callback)
 			if callback then
@@ -214,7 +214,7 @@ run(function()
 		addHammer(ent.Character:FindFirstChild('Hammer'))
 	end
 	
-	PhaseHammer = vape.Categories.Blatant:CreateModule({
+	PhaseHammer = lib.Categories.Blatant:CreateModule({
 		Name = 'PhaseHammer',
 		Function = function(callback)
 			if callback then
@@ -237,7 +237,7 @@ end)
 run(function()
 	local RestrainBeast
 	
-	RestrainBeast = vape.Categories.Blatant:CreateModule({
+	RestrainBeast = lib.Categories.Blatant:CreateModule({
 		Name = 'RestrainBeast',
 		Function = function(callback)
 			if callback then
@@ -260,7 +260,7 @@ end)
 run(function()
 	local SlowBeast
 	
-	SlowBeast = vape.Categories.Blatant:CreateModule({
+	SlowBeast = lib.Categories.Blatant:CreateModule({
 		Name = 'SlowBeast',
 		Function = function(callback)
 			if callback then
@@ -283,7 +283,7 @@ end)
 run(function()
 	local SpamBeast
 	
-	SpamBeast = vape.Categories.Blatant:CreateModule({
+	SpamBeast = lib.Categories.Blatant:CreateModule({
 		Name = 'SpamBeast',
 		Function = function(callback)
 			if callback then
@@ -311,7 +311,7 @@ run(function()
 	local OutlineTransparency
 	local Reference = {}
 	local Folder = Instance.new('Folder')
-	Folder.Parent = vape.gui
+	Folder.Parent = lib.gui
 	
 	local function Added(computer)
 		local screen = computer:FindFirstChild('Screen')
@@ -334,7 +334,7 @@ run(function()
 	
 	local function Removed(computer)
 		if Reference[computer] then
-			if vape.ThreadFix then
+			if lib.ThreadFix then
 				setthreadidentity(8)
 			end
 	
@@ -362,12 +362,12 @@ run(function()
 		end
 	end
 	
-	ComputerESP = vape.Categories.Render:CreateModule({
+	ComputerESP = lib.Categories.Render:CreateModule({
 		Name = 'ComputerESP',
 		Function = function(callback)
 			if callback then
-				ComputerESP:Clean(vapeEvents.MapAdded.Event:Connect(MapAdded))
-				ComputerESP:Clean(vapeEvents.MapRemoved.Event:Connect(function()
+				ComputerESP:Clean(mapEvents.MapAdded.Event:Connect(MapAdded))
+				ComputerESP:Clean(mapEvents.MapRemoved.Event:Connect(function()
 					for _, v in Reference do
 						v:Destroy()
 					end
@@ -446,7 +446,7 @@ run(function()
 	end
 	
 	
-	AutoComputer = vape.Categories.Utility:CreateModule({
+	AutoComputer = lib.Categories.Utility:CreateModule({
 		Name = 'AutoComputer',
 		Function = function(callback)
 			if callback then
