@@ -14,6 +14,10 @@ local supported = {
 
 local stockKey = "v" .. "ape"
 
+local compile = loadstring or function(source)
+	return load(source)
+end
+
 local function resolveLibrary()
 	shared.library = shared.library or shared[stockKey]
 	return shared.library
@@ -39,7 +43,7 @@ end
 notify(client.Name, 'Fetching from GitHub...')
 
 local ok, code = pcall(function()
-	return game:HttpGet(client.URL)
+	return game:HttpGet(client.URL, true)
 end)
 
 if not ok then
@@ -54,11 +58,11 @@ repeat
 until (shared.library and shared.library.Loaded) or tick() > timeout
 
 if not (shared.library and shared.library.Loaded) then
-	notify(client.Name, 'Client library is not loaded. Load it first, then run this.')
+	notify(client.Name, 'Vape library (shared.vape) is not loaded. Run the Vape loader first, then run this.')
 	return
 end
 
-local fn = loadstring(code)
+local fn = compile(code)
 if not fn then
 	notify(client.Name, 'Failed to parse client script.')
 	return
